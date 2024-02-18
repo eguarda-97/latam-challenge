@@ -1,23 +1,24 @@
 from typing import List, Tuple
 from datetime import datetime
-import pandas as pd
+import json
+from collections import Counter
 import time
 
 def q1_time(file_path: str) -> List[Tuple[datetime.date, str]]:
-    df = pd.read_json(file_path, lines=True).loc[:, ['date', 'user']]
-    df.date = pd.to_datetime(df.date).dt.date
-    top_dates = df['date'].value_counts(ascending=False).index.to_list()
-    top_dates = top_dates[:10] if len(top_dates) > 10 else top_dates
-    df['username'] = df['user'].apply(lambda x: x['username'])
-    df = df.loc[df['date'].isin(top_dates)] 
-    top_users = [df.loc[df['date']==date, 'username'].value_counts(ascending=False).index.to_list()[0] for date in top_dates]
-    return [(top_dates[i], top_users[i]) for i in range(len(top_dates))]
+    with open(file_path, 'r') as f:
+        data = [[json.loads(line)['date'].split('T')[0], json.loads(line)['user']['username']]  for line in f.readlines()]
+
+    most_common_dates = Counter([d[0] for d in data]).most_common(10)
+    most_common_users = [Counter([d[1] for d in data if d[0] == date[0]]).most_common(1)[0][0] for date in most_common_dates]
+
+    return list(zip([datetime.strptime(date[0], "%Y-%m-%d").date() for date in most_common_dates], most_common_users))
+
 
 
 if __name__ == '__main__':
     initial_time = time.time()
     return_list = q1_time(file_path="farmers-protest-tweets-2021-2-4.json")
-    
+
     print(return_list)
     print(f'EXECUTION TIME: {time.time() - initial_time}')
 

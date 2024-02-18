@@ -1,32 +1,23 @@
 from typing import List, Tuple
 from datetime import datetime
 import json
+from collections import defaultdict
 import time
 
 def q1_memory(file_path: str) -> List[Tuple[datetime.date, str]]:
+    dates_dict = defaultdict(lambda: defaultdict(int))
     with open(file_path, 'r') as f:
-        dates_dict = {}
-        
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            
+        for line in f:
             tweet = json.loads(line)
-            date = tweet['date'].split('T')[0]
+            tweet_date = tweet['date'].split('T')[0]
             username = tweet['user']['username']
-            if date not in dates_dict.keys():
-                dates_dict[date] = {username: 1}
-            else:
-                if username not in dates_dict[date].keys():
-                    dates_dict[date][username] = 1
-                else:
-                    dates_dict[date][username] += 1
+            dates_dict[tweet_date][username] += 1
     
-    top_dates = sorted(dates_dict.keys(), key=lambda x: sum(dates_dict[x].values()), reverse=True)
-    top_dates = top_dates[:10] if len(top_dates) > 10 else top_dates
-    top_users = [max(dates_dict[i].keys(), key=lambda x: dates_dict[i][x]) for i in top_dates]
-    return [(datetime.strptime(top_dates[i], "%Y-%m-%d").date(), top_users[i]) for i in range(len(top_dates))]
+    top_dates = sorted(dates_dict.keys(), key=lambda x: sum(dates_dict[x].values()), reverse=True)[:10]
+    top_users = [max(dates_dict[date], key=dates_dict[date].get) for date in top_dates]
+    top_dates = [datetime.strptime(date_str, "%Y-%m-%d").date() for date_str in top_dates]
+    
+    return list(zip(top_dates, top_users))
 
 if __name__ == '__main__':
     initial_time = time.time()
