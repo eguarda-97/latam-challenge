@@ -1,29 +1,20 @@
 from typing import List, Tuple
 from datetime import datetime
 import json
+from collections import Counter
 from emoji import emoji_list
 import time
 
 def q2_memory(file_path: str) -> List[Tuple[datetime.date, str]]:
-    with open(file_path, 'r') as f:
-        emoji_counter = {}
-        
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            
-            tweet_content = json.loads(line)['content']
-            tweet_content = emoji_list(tweet_content)
-            for emoji_obj in tweet_content:
-                emoji = emoji_obj['emoji']
-                if emoji not in emoji_counter.keys():
-                    emoji_counter[emoji] = 1
-                else:
-                    emoji_counter[emoji] += 1
+    emoji_counter = Counter()
     
-    top_emojis = sorted(emoji_counter.keys(), key=lambda x: emoji_counter[x], reverse=True)[:10]
-    return [(emoji, emoji_counter[emoji]) for emoji in top_emojis]
+    with open(file_path, 'r') as f:
+        for line in f:
+            tweet_content = json.loads(line)['content']
+            tweet_emojis = [emoji['emoji'] for emoji in emoji_list(tweet_content)]
+            emoji_counter.update(tweet_emojis)
+    
+    return emoji_counter.most_common(10)
 
 if __name__ == '__main__':
     initial_time = time.time()
